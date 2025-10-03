@@ -11,7 +11,6 @@ import Sheet from '@sj-ab/component-library.ui.sheet';
 import AppBar from '@sj-ab/component-library.ui.app-bar';
 import Badge from '@sj-ab/component-library.ui.badge';
 import { StationSearch } from '@/components/StationSearch';
-import { DepartureList } from '@/components/DepartureList';
 import { useTimetables } from '@/hooks/useTimetables';
 import { useStations } from '@/hooks/useStations';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -73,9 +72,10 @@ export default function MinaTidtabellerPage() {
   useEffect(() => {
     if (timetables.length > 0 && !selectedTimetable) {
       // Get the most recently used timetable
-      const lastUsed = [...timetables].sort((a, b) => b.lastUsed - a.lastUsed)[0];
+      const lastUsed = [...timetables].sort((a, b) => b.lastUsed.getTime() - a.lastUsed.getTime())[0];
       handleSelectTimetable(lastUsed);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timetables.length]); // Only run when timetables are loaded
 
   // Set from station based on geolocation (only if no timetables exist)
@@ -89,12 +89,6 @@ export default function MinaTidtabellerPage() {
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
   }, []);
-
-  const handleSwapStations = () => {
-    const temp = fromStation;
-    setFromStation(toStation);
-    setToStation(temp);
-  };
 
   const handleCreateTimetable = async () => {
     if (!fromStation || !toStation) {
@@ -318,20 +312,6 @@ export default function MinaTidtabellerPage() {
     }
   };
 
-  const getDestinationName = (departure: TrainAnnouncement) => {
-    // Get the last destination from ViaToLocation or ToLocation
-    const destinations = departure.ViaToLocation || departure.ToLocation || [];
-    if (destinations.length === 0) return 'Okänd destination';
-
-    // Sort by Order to get the final destination
-    const sortedDestinations = [...destinations].sort((a, b) => b.Order - a.Order);
-    const finalDestination = sortedDestinations[0];
-
-    // Try to find the full station name from our stations list
-    const station = stations.find(s => s.LocationSignature === finalDestination.LocationName);
-    return station ? station.AdvertisedLocationName : finalDestination.LocationName;
-  };
-
   if (showTimetableView && selectedTimetable) {
     return (
       <Box
@@ -403,7 +383,7 @@ export default function MinaTidtabellerPage() {
                       {departure.AdvertisedTimeAtLocation?.substring(11, 16)}
                     </Typography>
                     {departure.Canceled && (
-                      <Badge label="Inställd" color="error" size="large" />
+                      <Badge label="Inställd" color="red" size="lg" />
                     )}
                     {!departure.Canceled && departure.EstimatedTimeAtLocation && (
                       <Typography
@@ -421,7 +401,7 @@ export default function MinaTidtabellerPage() {
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="body2" component="span">
+                    <Typography variant="body1" component="span">
                       {selectedTimetable.toStation.name}
                     </Typography>
                     <ChevronRightIcon />
@@ -433,13 +413,13 @@ export default function MinaTidtabellerPage() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }} onClick={handlePreviousDay}>
                 <ChevronLeftIcon />
-                <Typography variant="body2">
+                <Typography variant="body1">
                   {formatDate(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000))}
                 </Typography>
               </Box>
               <Typography variant="subtitle1">{formatDate(selectedDate)}</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }} onClick={handleNextDay}>
-                <Typography variant="body2">
+                <Typography variant="body1">
                   {formatDate(new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000))}
                 </Typography>
                 <ChevronRightIcon />
@@ -459,7 +439,9 @@ export default function MinaTidtabellerPage() {
         <Sheet
           open={showTimetableModal}
           onClose={() => setShowTimetableModal(false)}
-          anchor="bottom"
+          height="auto"
+          width="large"
+          ariaLabel="Välj tidtabell"
         >
           <AppBar
             title="Välj tidtabell"
@@ -535,11 +517,20 @@ export default function MinaTidtabellerPage() {
         <Sheet
           open={showCreateModal}
           onClose={handleCloseCreateModal}
-          anchor="bottom"
+          height="auto"
+          width="large"
+          ariaLabel="Skapa ny tidtabell"
         >
           <AppBar
             title="Skapa ny tidtabell"
-            onClose={handleCloseCreateModal}
+            elevated={true}
+            navigationButtons={[
+              {
+                variant: 'close',
+                label: 'Stäng',
+                action: handleCloseCreateModal,
+              },
+            ]}
           />
 
           <Box sx={{ p: 3 }}>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { TrainAnnouncement } from '@/lib/trafikverket';
 
 const API_URL = 'https://api.trafikinfo.trafikverket.se/v2/data.json';
 const API_KEY = process.env.TRAFIKVERKET_API_KEY || '';
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
     console.log('Looking for destination signature:', toStation);
 
     // Filter by checking all locations (ToLocation + ViaToLocation)
-    const filtered = announcements.filter((announcement: any) => {
+    const filtered = announcements.filter((announcement: TrainAnnouncement) => {
       const allLocations = [
         ...(announcement.ToLocation || []),
         ...(announcement.ViaToLocation || [])
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Check if destination is in the route
-      const hasDestination = allLocations.some((loc: any) => {
+      const hasDestination = allLocations.some((loc: { LocationName?: string }) => {
         const locationSignature = (loc.LocationName || '').toLowerCase();
         const targetSignature = toStation.toLowerCase();
         return locationSignature === targetSignature;

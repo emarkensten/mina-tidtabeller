@@ -3,8 +3,7 @@
 import { List, ListItem, Box, Typography } from '@mui/material';
 import { Badge } from '@sj-ab/component-library.ui.badge';
 import { TrainAnnouncement } from '@/lib/trafikverket';
-import { format, parseISO, differenceInMinutes } from 'date-fns';
-import { sv } from 'date-fns/locale';
+import { parseISO, differenceInMinutes, format } from 'date-fns';
 
 interface DepartureListProps {
   departures: TrainAnnouncement[];
@@ -59,7 +58,6 @@ export function DepartureList({ departures, onDepartureClick }: DepartureListPro
     >
       {departures.map((departure, index) => {
         const time = getDepartureTime(departure);
-        const delay = getDelayMinutes(departure);
         const productName = getProductName(departure);
 
         return (
@@ -92,9 +90,8 @@ export function DepartureList({ departures, onDepartureClick }: DepartureListPro
                     </Typography>
                     <Badge
                       size="lg"
-                      color="Critical"
+                      color="red"
                       label="Inställd"
-                      labelPosition="Inside"
                     />
                   </>
                 ) : typeof time === 'object' ? (

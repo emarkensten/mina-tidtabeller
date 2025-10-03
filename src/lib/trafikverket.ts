@@ -35,6 +35,7 @@ export interface TrainAnnouncement {
   Deviation?: Array<{ Description: string }>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function queryTrafikverket<T>(request: TrafikverketRequest): Promise<T[]> {
   const filter = request.filter || {};
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { TrainStation } from '@/lib/trafikverket';
 
 const API_URL = 'https://api.trafikinfo.trafikverket.se/v2/data.json';
 const API_KEY = process.env.TRAFIKVERKET_API_KEY || '';
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Filter stations on server side based on query
     const queryLower = query.toLowerCase();
-    const filtered = stations.filter((station: any) =>
+    const filtered = stations.filter((station: TrainStation) =>
       station.AdvertisedLocationName.toLowerCase().includes(queryLower) ||
       station.LocationSignature.toLowerCase().includes(queryLower)
     );

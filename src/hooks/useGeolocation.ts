@@ -3,11 +3,6 @@
 import { useState, useEffect } from 'react';
 import { TrainStation } from '@/lib/trafikverket';
 
-interface GeolocationData {
-  latitude: number;
-  longitude: number;
-}
-
 // Station coordinates (major Swedish cities)
 const STATION_COORDINATES: Record<string, { lat: number; lon: number }> = {
   'Cst': { lat: 59.3293, lon: 18.0686 }, // Stockholm Central
