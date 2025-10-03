@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Box, List, ListItem, ListItemButton, ListItemText, SvgIcon, IconButton as MuiIconButton } from '@mui/material';
 import Typography from '@sj-ab/component-library.ui.typography';
+import Divider from '@sj-ab/component-library.ui.divider';
 import FlowButton from '@sj-ab/component-library.ui.flow-button';
 import { Chip } from '@sj-ab/component-library.ui.chip';
 import TextButton from '@sj-ab/component-library.ui.text-button';
@@ -462,28 +463,65 @@ export default function MinaTidtabellerPage() {
         >
           <AppBar
             title="Välj tidtabell"
-            onClose={() => setShowTimetableModal(false)}
+            elevated={true}
+            navigationButtons={[
+              {
+                variant: 'close',
+                label: 'Stäng',
+                action: () => setShowTimetableModal(false),
+              },
+            ]}
           />
 
           <Box sx={{ p: 3 }}>
             <List>
-              {timetables.map((timetable) => (
-                <ListItemButton
-                  key={timetable.id}
-                  onClick={() => {
-                    handleSelectTimetable(timetable);
-                    setShowTimetableModal(false);
-                  }}
-                  selected={selectedTimetable.id === timetable.id}
-                >
-                  <ListItemText
-                    primary={`${timetable.fromStation.name} - ${timetable.toStation.name}`}
-                  />
-                  {selectedTimetable.id === timetable.id && (
-                    <CheckIcon />
-                  )}
-                </ListItemButton>
-              ))}
+              {(() => {
+                // Group timetables by route (ignoring direction)
+                const routeGroups = new Map<string, SavedTimetable>();
+
+                timetables.forEach((timetable) => {
+                  const routeKey = [timetable.fromStation.signature, timetable.toStation.signature]
+                    .sort()
+                    .join('-');
+
+                  const existing = routeGroups.get(routeKey);
+                  if (!existing || timetable.lastUsed > existing.lastUsed) {
+                    routeGroups.set(routeKey, timetable);
+                  }
+                });
+
+                // Convert to array and sort by lastUsed
+                const uniqueTimetables = Array.from(routeGroups.values())
+                  .sort((a, b) => b.lastUsed.getTime() - a.lastUsed.getTime());
+
+                return uniqueTimetables.map((timetable, index) => {
+                  const isSelected = selectedTimetable && (
+                    selectedTimetable.id === timetable.id ||
+                    (selectedTimetable.fromStation.signature === timetable.toStation.signature &&
+                     selectedTimetable.toStation.signature === timetable.fromStation.signature)
+                  );
+
+                  return (
+                    <Box key={timetable.id}>
+                      <ListItemButton
+                        onClick={() => {
+                          handleSelectTimetable(timetable);
+                          setShowTimetableModal(false);
+                        }}
+                        selected={isSelected}
+                      >
+                        <ListItemText
+                          primary={`${timetable.fromStation.name} - ${timetable.toStation.name}`}
+                        />
+                        {isSelected && (
+                          <CheckIcon />
+                        )}
+                      </ListItemButton>
+                      {index < uniqueTimetables.length - 1 && <Divider />}
+                    </Box>
+                  );
+                });
+              })()}
             </List>
 
             <Box sx={{ mt: 3 }}>
