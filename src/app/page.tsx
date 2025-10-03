@@ -130,6 +130,7 @@ export default function MinaTidtabellerPage() {
   const handleSelectTimetable = async (timetable: SavedTimetable) => {
     setSelectedTimetable(timetable);
     updateLastUsed(timetable.id);
+    setSelectedDate(new Date()); // Reset to current date/time
     setLoading(true);
     setError(null);
 
@@ -137,6 +138,7 @@ export default function MinaTidtabellerPage() {
       const results = await getDepartures(
         timetable.fromStation.signature,
         timetable.toStation.signature
+        // Don't pass date so API uses $now filter
       );
 
       setDepartures(results);
@@ -365,6 +367,7 @@ export default function MinaTidtabellerPage() {
                 <ListItem
                   key={index}
                   sx={{
+                    py: 2.5,
                     borderBottom: index < departures.length - 1 ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -431,7 +434,14 @@ export default function MinaTidtabellerPage() {
         <Box sx={{ height: 24 }} />
 
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <TextButton onClick={() => selectedTimetable && deleteTimetable(selectedTimetable.id)}>
+          <TextButton onClick={() => {
+            if (selectedTimetable) {
+              deleteTimetable(selectedTimetable.id);
+              setSelectedTimetable(null);
+              setShowTimetableView(false);
+              setDepartures([]);
+            }
+          }}>
             Ta bort denna tidtabell
           </TextButton>
         </Box>

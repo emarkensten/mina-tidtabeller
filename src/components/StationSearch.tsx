@@ -1,18 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Autocomplete, TextField, CircularProgress, Box, SvgIcon } from '@mui/material';
+import Autocomplete, { SelectedItemProps } from '@sj-ab/component-library.ui.autocomplete';
 import { TrainStation } from '@/lib/trafikverket';
 import { useStations } from '@/hooks/useStations';
-
-// SJ Chevron Down Icon
-function ChevronDownIcon() {
-  return (
-    <SvgIcon>
-      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
-    </SvgIcon>
-  );
-}
 
 interface StationSearchProps {
   label: string;
@@ -24,122 +15,49 @@ interface StationSearchProps {
 
 export function StationSearch({ label, value, onChange, error, autoFocus }: StationSearchProps) {
   const [inputValue, setInputValue] = useState('');
-  const [options, setOptions] = useState<TrainStation[]>([]);
-  const { searchStations, loading: stationsLoading } = useStations();
+  const { searchStations, stations } = useStations();
 
+  // Update input value when value changes
   useEffect(() => {
-    if (inputValue.length < 2) {
-      setOptions([]);
-      return;
+    if (value) {
+      setInputValue(value.AdvertisedLocationName);
+    } else {
+      setInputValue('');
     }
+  }, [value]);
 
-    const results = searchStations(inputValue);
-    setOptions(results);
-  }, [inputValue, searchStations]);
+  const handleChange = (item: SelectedItemProps) => {
+    setInputValue(item.name);
+  };
+
+  const handleSelect = (item: SelectedItemProps) => {
+    const station = stations.find(s =>
+      s.AdvertisedLocationName === item.name ||
+      s.LocationSignature === item.id
+    );
+    onChange(station || null);
+  };
+
+  const searchResults = inputValue.length >= 2 ? searchStations(inputValue) : [];
+
+  const options: SelectedItemProps[] = searchResults.map(station => ({
+    id: station.LocationSignature,
+    name: station.AdvertisedLocationName,
+  }));
 
   return (
     <Autocomplete
-      value={value}
-      onChange={(_event, newValue) => onChange(newValue)}
-      inputValue={inputValue}
-      onInputChange={(_event, newInputValue) => setInputValue(newInputValue || '')}
+      id={`station-search-${label.toLowerCase()}`}
+      label={label}
+      placeholder={`Sök ${label.toLowerCase()}...`}
+      value={inputValue}
+      onChange={handleChange}
+      onSelect={handleSelect}
       options={options}
-      getOptionLabel={(option) => option?.AdvertisedLocationName || ''}
-      loading={stationsLoading}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label={label}
-          error={error}
-          variant="outlined"
-          autoFocus={autoFocus}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: '8px',
-              padding: '16px',
-              fontFamily: 'SJ Sans, sans-serif',
-              fontSize: '16px',
-              '& fieldset': {
-                borderColor: error ? '#d32f2f' : 'rgba(0, 0, 0, 0.42)',
-                borderWidth: '1px',
-              },
-              '&:hover fieldset': {
-                borderColor: error ? '#d32f2f' : 'rgba(0, 0, 0, 0.87)',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: error ? '#d32f2f' : '#000',
-                borderWidth: '2px',
-              },
-            },
-            '& .MuiInputLabel-root': {
-              fontFamily: 'SJ Sans, sans-serif',
-              fontSize: '16px',
-              color: error ? '#d32f2f' : 'rgba(0, 0, 0, 0.6)',
-              '&.Mui-focused': {
-                color: error ? '#d32f2f' : '#000',
-              },
-            },
-            '& .MuiInputBase-input': {
-              padding: '0 !important',
-              fontFamily: 'SJ Sans, sans-serif',
-            },
-          }}
-          slotProps={{
-            input: {
-              ...params.InputProps,
-              endAdornment: (
-                <>
-                  {stationsLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                  {params.InputProps.endAdornment}
-                </>
-              ),
-            },
-          }}
-        />
-      )}
-      renderOption={(props, option) => {
-        const { key, ...otherProps } = props;
-        return (
-          <Box
-            component="li"
-            key={key}
-            {...otherProps}
-            sx={{
-              fontFamily: 'SJ Sans, sans-serif',
-              fontSize: '16px',
-              padding: '12px 16px',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              },
-              '&[aria-selected="true"]': {
-                backgroundColor: 'rgba(0, 0, 0, 0.08)',
-              },
-            }}
-          >
-            {option.AdvertisedLocationName}
-          </Box>
-        );
-      }}
-      isOptionEqualToValue={(option, value) =>
-        option?.LocationSignature === value?.LocationSignature
-      }
-      noOptionsText="Inga stationer hittades"
-      loadingText="Söker..."
-      fullWidth
-      popupIcon={<ChevronDownIcon />}
-      sx={{
-        '& .MuiAutocomplete-paper': {
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-        },
-        '& .MuiAutocomplete-listbox': {
-          fontFamily: 'SJ Sans, sans-serif',
-          padding: '8px 0',
-        },
-        '& .MuiAutocomplete-popupIndicator': {
-          color: 'rgba(0, 0, 0, 0.54)',
-        },
-      }}
+      errorMessage={error ? 'Välj en station' : ''}
+      lang="sv"
+      highlightMatch={true}
+      useInternalFilter={false}
     />
   );
 }
