@@ -16,6 +16,7 @@ import { useStations } from '@/hooks/useStations';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { TrainStation, TrainAnnouncement, getDepartures } from '@/lib/trafikverket';
 import { SavedTimetable } from '@/types/timetable';
+import { generateSJBookingUrl } from '@/lib/stationNameConverter';
 
 // Custom SVG Icons
 function ChevronLeftIcon() {
@@ -364,8 +365,18 @@ export default function MinaTidtabellerPage() {
           <>
             <List sx={{ bgcolor: 'white', borderRadius: '8px' }}>
               {departures.map((departure, index) => (
-                <ListItem
+                <ListItemButton
                   key={index}
+                  onClick={() => {
+                    if (selectedTimetable && departure.AdvertisedTimeAtLocation) {
+                      const sjUrl = generateSJBookingUrl(
+                        selectedTimetable.fromStation.name,
+                        selectedTimetable.toStation.name,
+                        departure.AdvertisedTimeAtLocation
+                      );
+                      window.open(sjUrl, '_blank');
+                    }
+                  }}
                   sx={{
                     py: 2.5,
                     borderBottom: index < departures.length - 1 ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
@@ -409,7 +420,7 @@ export default function MinaTidtabellerPage() {
                     </Typography>
                     <ChevronRightIcon />
                   </Box>
-                </ListItem>
+                </ListItemButton>
               ))}
             </List>
 
