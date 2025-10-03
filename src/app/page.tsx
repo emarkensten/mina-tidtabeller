@@ -430,7 +430,7 @@ export default function MinaTidtabellerPage() {
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body1" component="span">
-                    {selectedTimetable.toStation.name}
+                    {departure.ProductInformation?.[0]?.Description || departure.AdvertisedTrainIdent}
                   </Typography>
                   <ChevronRightIcon />
                 </Box>
