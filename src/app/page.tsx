@@ -404,7 +404,7 @@ export default function MinaTidtabellerPage() {
                     component="span"
                     sx={{
                       fontWeight: 'bold',
-                      textDecoration: departure.Canceled ? 'line-through' : 'none'
+                      textDecoration: (departure.Canceled || departure.EstimatedTimeAtLocation) ? 'line-through' : 'none'
                     }}
                   >
                     {departure.AdvertisedTimeAtLocation?.substring(11, 16)}
@@ -418,6 +418,7 @@ export default function MinaTidtabellerPage() {
                       component="span"
                       sx={{
                         fontWeight: 'bold',
+                        color: 'black',
                         backgroundColor: '#FFD700',
                         padding: '2px 8px',
                         borderRadius: '4px',
