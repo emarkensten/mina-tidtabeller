@@ -13,7 +13,7 @@ interface StationSearchProps {
   autoFocus?: boolean;
 }
 
-export function StationSearch({ label, value, onChange, error, autoFocus }: StationSearchProps) {
+export function StationSearch({ label, value, onChange, error }: StationSearchProps) {
   const [inputValue, setInputValue] = useState('');
   const { searchStations, stations } = useStations();
 

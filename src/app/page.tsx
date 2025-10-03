@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, List, ListItem, ListItemButton, ListItemText, SvgIcon, IconButton as MuiIconButton } from '@mui/material';
+import { Box, List, ListItemButton, ListItemText, SvgIcon } from '@mui/material';
 import Typography from '@sj-ab/component-library.ui.typography';
 import Divider from '@sj-ab/component-library.ui.divider';
 import FlowButton from '@sj-ab/component-library.ui.flow-button';
-import { Chip } from '@sj-ab/component-library.ui.chip';
 import TextButton from '@sj-ab/component-library.ui.text-button';
 import Sheet from '@sj-ab/component-library.ui.sheet';
 import AppBar from '@sj-ab/component-library.ui.app-bar';
@@ -316,145 +315,159 @@ export default function MinaTidtabellerPage() {
   };
 
   if (showTimetableView && selectedTimetable) {
+    // Filter departures to show only relevant times for the selected date
+    const filteredDepartures = departures.filter(departure => {
+      if (!departure.AdvertisedTimeAtLocation) return true;
+
+      const departureDate = new Date(departure.AdvertisedTimeAtLocation);
+      const selectedDateStr = selectedDate.toISOString().substring(0, 10);
+      const departureDateStr = departureDate.toISOString().substring(0, 10);
+
+      // Only show departures from the selected date
+      if (departureDateStr !== selectedDateStr) return false;
+
+      const hour = departureDate.getHours();
+      // Show all departures from selected day, but skip very early morning (03:00-04:59)
+      // This allows showing late night (00:00-02:59) and normal hours (05:00-23:59)
+      return hour <= 2 || hour >= 5;
+    });
+
     return (
       <Box
-        sx={{
-          bgcolor: 'background.paper',
+        sx={(theme) => ({
+          bgcolor: theme.designTokens.color.background.base.primary.value,
           minHeight: '100vh',
-          px: 2,
-        }}
+        })}
       >
-        <Box sx={{ height: 24 }} />
+        <AppBar
+          title={`${selectedTimetable.fromStation.name} - ${selectedTimetable.toStation.name}`}
+          elevated={true}
+          navigationButtons={[
+            {
+              variant: 'menu',
+              label: 'Välj tidtabell',
+              action: () => setShowTimetableModal(true),
+            },
+          ]}
+          actionButtons={[
+            {
+              id: 'swap-direction',
+              icon: <SwapVerticalIcon />,
+              label: 'Byt riktning',
+              action: handleSwapTimetableDirections,
+            },
+          ]}
+        />
 
-        <Typography variant="h1">Mina tidtabeller</Typography>
+        <Box sx={{ px: 2, pt: 3 }}>
+          <Typography variant="h3">
+            {getDateLabel(selectedDate)}
+          </Typography>
 
-        <Box sx={{ height: 24 }} />
+          <Box sx={{ height: 16 }} />
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
-          <Chip
-            label={`${selectedTimetable.fromStation.name} - ${selectedTimetable.toStation.name}`}
-            onClick={() => setShowTimetableModal(true)}
-          />
-
-          <MuiIconButton
-            onClick={handleSwapTimetableDirections}
-            sx={{
-              color: 'text.primary',
-              '&:hover': { bgcolor: 'action.hover' }
-            }}
-          >
-            <SwapVerticalIcon />
-          </MuiIconButton>
-        </Box>
-
-        <Box sx={{ height: 16 }} />
-
-        <Typography variant="h3">
-          {getDateLabel(selectedDate)}
-        </Typography>
-
-        <Box sx={{ height: 16 }} />
-
-        {loading ? (
-          <Typography>Laddar avgångar...</Typography>
-        ) : error ? (
-          <Typography color="error">{error}</Typography>
-        ) : departures.length === 0 ? (
-          <Typography>Inga avgångar hittades</Typography>
-        ) : (
-          <>
-            <List sx={{ bgcolor: 'white', borderRadius: '8px' }}>
-              {departures.map((departure, index) => (
-                <ListItemButton
-                  key={index}
-                  onClick={() => {
-                    if (selectedTimetable && departure.AdvertisedTimeAtLocation) {
-                      const sjUrl = generateSJBookingUrl(
-                        selectedTimetable.fromStation.name,
-                        selectedTimetable.toStation.name,
-                        departure.AdvertisedTimeAtLocation
-                      );
-                      window.open(sjUrl, '_blank');
-                    }
-                  }}
-                  sx={{
-                    py: 2.5,
-                    borderBottom: index < departures.length - 1 ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {loading ? (
+            <Typography>Laddar avgångar...</Typography>
+          ) : error ? (
+            <Typography color="error">{error}</Typography>
+          ) : filteredDepartures.length === 0 ? (
+            <Typography>Inga avgångar hittades</Typography>
+          ) : (
+            <List sx={(theme) => ({
+              bgcolor: theme.designTokens.color.background.base.secondary.value,
+              borderRadius: '8px'
+            })}>
+              {filteredDepartures.map((departure, index) => (
+              <ListItemButton
+                key={index}
+                onClick={() => {
+                  if (selectedTimetable && departure.AdvertisedTimeAtLocation) {
+                    const sjUrl = generateSJBookingUrl(
+                      selectedTimetable.fromStation.name,
+                      selectedTimetable.toStation.name,
+                      departure.AdvertisedTimeAtLocation
+                    );
+                    window.open(sjUrl, '_blank');
+                  }
+                }}
+                sx={{
+                  py: 2.5,
+                  borderBottom: index < filteredDepartures.length - 1 ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography
+                    variant="h3"
+                    component="span"
+                    sx={{
+                      fontWeight: 'bold',
+                      textDecoration: departure.Canceled ? 'line-through' : 'none'
+                    }}
+                  >
+                    {departure.AdvertisedTimeAtLocation?.substring(11, 16)}
+                  </Typography>
+                  {departure.Canceled && (
+                    <Badge label="Inställd" color="red" size="lg" />
+                  )}
+                  {!departure.Canceled && departure.EstimatedTimeAtLocation && (
                     <Typography
                       variant="h3"
                       component="span"
                       sx={{
                         fontWeight: 'bold',
-                        textDecoration: departure.Canceled ? 'line-through' : 'none'
+                        backgroundColor: '#FFD700',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
                       }}
                     >
-                      {departure.AdvertisedTimeAtLocation?.substring(11, 16)}
+                      {departure.EstimatedTimeAtLocation.substring(11, 16)}
                     </Typography>
-                    {departure.Canceled && (
-                      <Badge label="Inställd" color="red" size="lg" />
-                    )}
-                    {!departure.Canceled && departure.EstimatedTimeAtLocation && (
-                      <Typography
-                        variant="h3"
-                        component="span"
-                        sx={{
-                          fontWeight: 'bold',
-                          backgroundColor: '#FFD700',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                        }}
-                      >
-                        {departure.EstimatedTimeAtLocation.substring(11, 16)}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="body1" component="span">
-                      {selectedTimetable.toStation.name}
-                    </Typography>
-                    <ChevronRightIcon />
-                  </Box>
-                </ListItemButton>
-              ))}
-            </List>
+                  )}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body1" component="span">
+                    {selectedTimetable.toStation.name}
+                  </Typography>
+                  <ChevronRightIcon />
+                </Box>
+              </ListItemButton>
+            ))}
+          </List>
+          )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }} onClick={handlePreviousDay}>
-                <ChevronLeftIcon />
-                <Typography variant="body1">
-                  {formatDate(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000))}
-                </Typography>
-              </Box>
-              <Typography variant="subtitle1">{formatDate(selectedDate)}</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }} onClick={handleNextDay}>
-                <Typography variant="body1">
-                  {formatDate(new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000))}
-                </Typography>
-                <ChevronRightIcon />
-              </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }} onClick={handlePreviousDay}>
+              <ChevronLeftIcon />
+              <Typography variant="body1">
+                {formatDate(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000))}
+              </Typography>
             </Box>
-          </>
-        )}
+            <Typography variant="subtitle1">{formatDate(selectedDate)}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }} onClick={handleNextDay}>
+              <Typography variant="body1">
+                {formatDate(new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000))}
+              </Typography>
+              <ChevronRightIcon />
+            </Box>
+          </Box>
 
-        <Box sx={{ height: 24 }} />
+          <Box sx={{ height: 24 }} />
 
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <TextButton onClick={() => {
-            if (selectedTimetable) {
-              deleteTimetable(selectedTimetable.id);
-              setSelectedTimetable(null);
-              setShowTimetableView(false);
-              setDepartures([]);
-            }
-          }}>
-            Ta bort denna tidtabell
-          </TextButton>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <TextButton onClick={() => {
+              if (selectedTimetable) {
+                deleteTimetable(selectedTimetable.id);
+                setSelectedTimetable(null);
+                setShowTimetableView(false);
+                setDepartures([]);
+              }
+            }}>
+              Ta bort denna tidtabell
+            </TextButton>
+          </Box>
         </Box>
 
         <Sheet
@@ -597,11 +610,11 @@ export default function MinaTidtabellerPage() {
 
   return (
     <Box
-      sx={{
-        bgcolor: 'background.paper',
+      sx={(theme) => ({
+        bgcolor: theme.designTokens.color.background.base.primary.value,
         minHeight: '100vh',
         px: 2,
-      }}
+      })}
     >
       <Box sx={{ height: 24 }} />
 

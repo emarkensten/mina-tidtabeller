@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Next +Component Library Template",
+  title: "Mina Tidtabeller",
 };
 
 export default function RootLayout({
@@ -11,8 +11,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="sv">
+      <body style={{ margin: 0, padding: 0 }}>
         <Providers>
           {children}
         </Providers>
