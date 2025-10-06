@@ -68,6 +68,24 @@ export default function MinaTidtabellerPage() {
   const { stations } = useStations();
   const { nearestStation } = useGeolocation(stations);
 
+  // Lock body scroll when any modal is open
+  useEffect(() => {
+    if (showTimetableModal || showCreateModal) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, [showTimetableModal, showCreateModal]);
+
   // Load last selected timetable on mount
   useEffect(() => {
     if (timetables.length > 0 && !selectedTimetable) {
@@ -477,6 +495,17 @@ export default function MinaTidtabellerPage() {
           height="auto"
           width="large"
           ariaLabel="Välj tidtabell"
+          PaperProps={{
+            sx: (theme) => ({
+              bgcolor: theme.designTokens.color.background.base.primary.value,
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            })
+          }}
+          sx={{
+            '& .MuiBackdrop-root': {
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+            }
+          }}
         >
           <AppBar
             title="Välj tidtabell"
@@ -555,6 +584,17 @@ export default function MinaTidtabellerPage() {
           height="auto"
           width="large"
           ariaLabel="Skapa ny tidtabell"
+          PaperProps={{
+            sx: (theme) => ({
+              bgcolor: theme.designTokens.color.background.base.primary.value,
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            })
+          }}
+          sx={{
+            '& .MuiBackdrop-root': {
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+            }
+          }}
         >
           <AppBar
             title="Skapa ny tidtabell"

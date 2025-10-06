@@ -5,6 +5,19 @@ import { SavedTimetable } from '@/types/timetable';
 
 const STORAGE_KEY = 'saved_timetables';
 
+// Polyfill for crypto.randomUUID() for older browsers/iOS
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback implementation
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export function useTimetables() {
   const [timetables, setTimetables] = useState<SavedTimetable[]>([]);
 
@@ -46,7 +59,7 @@ export function useTimetables() {
     }
 
     const newTimetable: SavedTimetable = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       fromStation,
       toStation,
       createdAt: new Date(),
