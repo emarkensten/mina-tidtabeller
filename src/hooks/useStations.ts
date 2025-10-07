@@ -83,10 +83,15 @@ export function useStations() {
       .slice(0, 10);
   }, [stations]);
 
+  const clearCache = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
   return {
     stations,
     loading,
     error,
     searchStations,
+    clearCache,
   };
 }

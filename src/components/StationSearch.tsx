@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
 import Autocomplete, { SelectedItemProps } from '@sj-ab/component-library.ui.autocomplete';
 import { TrainStation } from '@/lib/trafikverket';
 import { useStations } from '@/hooks/useStations';
@@ -15,7 +16,7 @@ interface StationSearchProps {
 
 export function StationSearch({ label, value, onChange, error }: StationSearchProps) {
   const [inputValue, setInputValue] = useState('');
-  const { searchStations, stations } = useStations();
+  const { searchStations, stations, clearCache } = useStations();
 
   // Update input value when value changes
   useEffect(() => {
@@ -40,24 +41,47 @@ export function StationSearch({ label, value, onChange, error }: StationSearchPr
 
   const searchResults = inputValue.length >= 2 ? searchStations(inputValue) : [];
 
-  const options: SelectedItemProps[] = searchResults.map(station => ({
-    id: station.LocationSignature,
-    name: station.AdvertisedLocationName,
-  }));
+  const handleClearCache = () => {
+    clearCache();
+    window.location.reload();
+  };
+
+  // Add a special "clear cache" option when no results are found
+  const options: SelectedItemProps[] = searchResults.length > 0
+    ? searchResults.map(station => ({
+        id: station.LocationSignature,
+        name: station.AdvertisedLocationName,
+      }))
+    : inputValue.length >= 2
+    ? [{
+        id: '__clear_cache__',
+        name: '🗑️ Rensa cache',
+      }]
+    : [];
+
+  const handleSelectWithCache = (item: SelectedItemProps) => {
+    if (item.id === '__clear_cache__') {
+      handleClearCache();
+      return;
+    }
+    handleSelect(item);
+  };
 
   return (
-    <Autocomplete
-      id={`station-search-${label.toLowerCase()}`}
-      label={label}
-      placeholder={`Sök ${label.toLowerCase()}...`}
-      value={inputValue}
-      onChange={handleChange}
-      onSelect={handleSelect}
-      options={options}
-      errorMessage={error ? 'Välj en station' : ''}
-      lang="sv"
-      highlightMatch={true}
-      useInternalFilter={false}
-    />
+    <Box>
+      <Autocomplete
+        id={`station-search-${label.toLowerCase()}`}
+        label={label}
+        placeholder={`Sök ${label.toLowerCase()}...`}
+        value={inputValue}
+        onChange={handleChange}
+        onSelect={handleSelectWithCache}
+        options={options}
+        errorMessage={error ? 'Välj en station' : ''}
+        lang="sv"
+        highlightMatch={true}
+        useInternalFilter={false}
+      />
+    </Box>
   );
 }
