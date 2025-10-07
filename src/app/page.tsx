@@ -503,7 +503,7 @@ export default function MinaTidtabellerPage() {
           height="auto"
           width="large"
           ariaLabel="Välj tidtabell"
-          disableScrollLock={true}
+          {...({ disableScrollLock: true } as Record<string, unknown>)}
           PaperProps={{
             sx: (theme) => ({
               bgcolor: theme.designTokens.color.background.base.primary.value,
@@ -593,7 +593,7 @@ export default function MinaTidtabellerPage() {
           height="auto"
           width="large"
           ariaLabel="Skapa ny tidtabell"
-          disableScrollLock={true}
+          {...({ disableScrollLock: true } as Record<string, unknown>)}
           PaperProps={{
             sx: (theme) => ({
               bgcolor: theme.designTokens.color.background.base.primary.value,

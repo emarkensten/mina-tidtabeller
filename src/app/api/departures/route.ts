@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TrainAnnouncement } from '@/lib/trafikverket';
 import { departuresCache, routeCache } from '@/lib/cache';
 
 const API_URL = 'https://api.trafikinfo.trafikverket.se/v2/data.json';
@@ -95,7 +94,7 @@ export async function GET(request: NextRequest) {
     console.log('Looking for trains stopping at:', toStation);
 
     // Get unique train identifiers
-    const uniqueTrainIdents = [...new Set(announcements.map(a => a.AdvertisedTrainIdent))];
+    const uniqueTrainIdents = [...new Set(announcements.map((a: { AdvertisedTrainIdent: string }) => a.AdvertisedTrainIdent))];
     console.log('Unique trains:', uniqueTrainIdents.length);
 
     // Fetch routes for all unique trains in parallel
@@ -156,7 +155,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Filter announcements to only include trains that stop at destination
-    const filtered = announcements.filter(a =>
+    const filtered = announcements.filter((a: { AdvertisedTrainIdent: string }) =>
       trainsStoppingAtDestination.has(a.AdvertisedTrainIdent)
     );
 
