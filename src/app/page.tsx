@@ -68,23 +68,6 @@ export default function MinaTidtabellerPage() {
   const { stations } = useStations();
   const { nearestStation } = useGeolocation(stations);
 
-  // Lock body scroll when any modal is open
-  useEffect(() => {
-    if (showTimetableModal || showCreateModal) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    };
-  }, [showTimetableModal, showCreateModal]);
 
   // Load last selected timetable on mount
   useEffect(() => {
@@ -232,6 +215,10 @@ export default function MinaTidtabellerPage() {
     setFromStation(null);
     setToStation(null);
     setError(null);
+  };
+
+  const handleCloseTimetableModal = () => {
+    setShowTimetableModal(false);
   };
 
   const handleCreateFromModal = async () => {
@@ -512,10 +499,11 @@ export default function MinaTidtabellerPage() {
 
         <Sheet
           open={showTimetableModal}
-          onClose={() => setShowTimetableModal(false)}
+          onClose={handleCloseTimetableModal}
           height="auto"
           width="large"
           ariaLabel="Välj tidtabell"
+          disableScrollLock={true}
           PaperProps={{
             sx: (theme) => ({
               bgcolor: theme.designTokens.color.background.base.primary.value,
@@ -535,7 +523,7 @@ export default function MinaTidtabellerPage() {
               {
                 variant: 'close',
                 label: 'Stäng',
-                action: () => setShowTimetableModal(false),
+                action: handleCloseTimetableModal,
               },
             ]}
           />
@@ -573,7 +561,7 @@ export default function MinaTidtabellerPage() {
                       <ListItemButton
                         onClick={() => {
                           handleSelectTimetable(timetable);
-                          setShowTimetableModal(false);
+                          handleCloseTimetableModal();
                         }}
                         selected={isSelected}
                       >
@@ -605,6 +593,7 @@ export default function MinaTidtabellerPage() {
           height="auto"
           width="large"
           ariaLabel="Skapa ny tidtabell"
+          disableScrollLock={true}
           PaperProps={{
             sx: (theme) => ({
               bgcolor: theme.designTokens.color.background.base.primary.value,

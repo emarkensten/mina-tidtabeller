@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TrainAnnouncement } from '@/lib/trafikverket';
+import { departuresCache, routeCache } from '@/lib/cache';
 
 const API_URL = 'https://api.trafikinfo.trafikverket.se/v2/data.json';
 const API_KEY = process.env.TRAFIKVERKET_API_KEY || '';
@@ -15,6 +16,16 @@ export async function GET(request: NextRequest) {
       { error: 'Missing from or to station' },
       { status: 400 }
     );
+  }
+
+  // Create cache key
+  const cacheKey = `${fromStation}-${toStation}-${dateParam || 'now'}`;
+
+  // Check cache first
+  const cached = departuresCache.get(cacheKey);
+  if (cached) {
+    console.log('Returning cached departures for:', cacheKey);
+    return NextResponse.json(cached);
   }
 
   // Use provided date or current time
@@ -80,32 +91,79 @@ export async function GET(request: NextRequest) {
 
     const announcements = result?.TrainAnnouncement || [];
 
-    console.log('Total announcements:', announcements.length);
-    console.log('Looking for destination signature:', toStation);
+    console.log('Total announcements from station:', announcements.length);
+    console.log('Looking for trains stopping at:', toStation);
 
-    // Filter by checking all locations (ToLocation + ViaToLocation)
-    const filtered = announcements.filter((announcement: TrainAnnouncement) => {
-      const allLocations = [
-        ...(announcement.ToLocation || []),
-        ...(announcement.ViaToLocation || [])
-      ];
+    // Get unique train identifiers
+    const uniqueTrainIdents = [...new Set(announcements.map(a => a.AdvertisedTrainIdent))];
+    console.log('Unique trains:', uniqueTrainIdents.length);
 
-      // Log for debugging
-      if (announcements.indexOf(announcement) === 0) {
-        console.log('First train all locations:', allLocations);
+    // Fetch routes for all unique trains in parallel
+    const routePromises = uniqueTrainIdents.map(async (trainIdent) => {
+      // Check route cache first (routes rarely change)
+      const routeCacheKey = `${trainIdent}-${toStation}`;
+      const cachedRoute = routeCache.get(routeCacheKey);
+
+      if (cachedRoute !== null) {
+        return { trainIdent, stopsAtDestination: cachedRoute };
       }
 
-      // Check if destination is in the route
-      const hasDestination = allLocations.some((loc: { LocationName?: string }) => {
-        const locationSignature = (loc.LocationName || '').toLowerCase();
-        const targetSignature = toStation.toLowerCase();
-        return locationSignature === targetSignature;
+      const routeRequestXml = `<REQUEST>
+  <LOGIN authenticationkey="${API_KEY}" />
+  <QUERY objecttype="TrainAnnouncement" schemaversion="1.9" limit="100">
+    <FILTER>
+      <AND>
+        <EQ name="AdvertisedTrainIdent" value="${trainIdent}" />
+        <EQ name="Advertised" value="true" />
+        ${timeFilter}
+      </AND>
+    </FILTER>
+    <INCLUDE>LocationSignature</INCLUDE>
+    <INCLUDE>ActivityType</INCLUDE>
+  </QUERY>
+</REQUEST>`;
+
+      const routeResponse = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml',
+        },
+        body: routeRequestXml,
       });
 
-      return hasDestination;
+      if (routeResponse.ok) {
+        const routeData = await routeResponse.json();
+        const routeResult = routeData.RESPONSE?.RESULT?.[0];
+        const routeStops = routeResult?.TrainAnnouncement || [];
+
+        // Check if destination station is in the route
+        const stopsAtDestination = routeStops.some((stop: { LocationSignature: string }) =>
+          stop.LocationSignature.toLowerCase() === toStation.toLowerCase()
+        );
+
+        // Cache the route result
+        routeCache.set(routeCacheKey, stopsAtDestination);
+
+        return { trainIdent, stopsAtDestination };
+      }
+
+      return { trainIdent, stopsAtDestination: false };
     });
 
-    console.log('Filtered departures:', filtered.length);
+    const routeResults = await Promise.all(routePromises);
+    const trainsStoppingAtDestination = new Set(
+      routeResults.filter(r => r.stopsAtDestination).map(r => r.trainIdent)
+    );
+
+    // Filter announcements to only include trains that stop at destination
+    const filtered = announcements.filter(a =>
+      trainsStoppingAtDestination.has(a.AdvertisedTrainIdent)
+    );
+
+    console.log('Filtered departures that stop at destination:', filtered.length);
+
+    // Cache the result
+    departuresCache.set(cacheKey, filtered);
 
     return NextResponse.json(filtered);
   } catch (error) {

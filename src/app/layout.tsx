@@ -19,12 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="sv" style={{ height: '100%', overflow: 'hidden' }}>
+    <html lang="sv" style={{ height: '100%' }}>
       <body style={{
         margin: 0,
         padding: 0,
-        height: '100%',
-        overflow: 'auto',
+        minHeight: '100%',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',
