@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   const requestXml = `<REQUEST>
   <LOGIN authenticationkey="${API_KEY}" />
-  <QUERY objecttype="TrainStation" schemaversion="1" limit="100">
+  <QUERY objecttype="TrainStation" schemaversion="1" limit="1000">
     <FILTER>
       <EQ name="Advertised" value="true" />
     </FILTER>

@@ -183,10 +183,17 @@ export default function MinaTidtabellerPage() {
         // Create new reverse timetable
         setLoading(true);
         try {
+          // Check if selected date is today
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const compareDate = new Date(selectedDate);
+          compareDate.setHours(0, 0, 0, 0);
+          const isToday = today.getTime() === compareDate.getTime();
+
           const results = await getDepartures(
             selectedTimetable.toStation.signature,
             selectedTimetable.fromStation.signature,
-            selectedDate
+            isToday ? undefined : selectedDate
           );
 
           setDepartures(results);
@@ -275,10 +282,17 @@ export default function MinaTidtabellerPage() {
     if (selectedTimetable) {
       setLoading(true);
       try {
+        // Check if new date is today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const compareDate = new Date(newDate);
+        compareDate.setHours(0, 0, 0, 0);
+        const isToday = today.getTime() === compareDate.getTime();
+
         const results = await getDepartures(
           selectedTimetable.fromStation.signature,
           selectedTimetable.toStation.signature,
-          newDate
+          isToday ? undefined : newDate
         );
         setDepartures(results);
       } catch (err) {
@@ -297,10 +311,17 @@ export default function MinaTidtabellerPage() {
     if (selectedTimetable) {
       setLoading(true);
       try {
+        // Check if new date is today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const compareDate = new Date(newDate);
+        compareDate.setHours(0, 0, 0, 0);
+        const isToday = today.getTime() === compareDate.getTime();
+
         const results = await getDepartures(
           selectedTimetable.fromStation.signature,
           selectedTimetable.toStation.signature,
-          newDate
+          isToday ? undefined : newDate
         );
         setDepartures(results);
       } catch (err) {

@@ -6,7 +6,7 @@ const API_KEY = process.env.TRAFIKVERKET_API_KEY || '';
 export async function GET() {
   const requestXml = `<REQUEST>
   <LOGIN authenticationkey="${API_KEY}" />
-  <QUERY objecttype="TrainStation" schemaversion="1" limit="500">
+  <QUERY objecttype="TrainStation" schemaversion="1" limit="1000">
     <FILTER>
       <EQ name="Advertised" value="true" />
     </FILTER>
