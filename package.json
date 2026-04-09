@@ -157,7 +157,7 @@
     "@sj-ab/component-library.utils.soft-hyphen-utils": "^1.0.0",
     "@sj-ab/component-library.utils.translations-util": "^3.0.0",
     "date-fns": "^2.30.0",
-    "next": "15.5.4",
+    "next": "15.5.9",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
